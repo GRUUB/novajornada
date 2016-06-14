@@ -103,7 +103,7 @@
 			$tmp = $file['tmp_name'];
 			
 			$extensao = @end(explode('.', $name));
-			$novoNome = $referencia . "-" . rand().".$extensao";
+			$novoNome = $name . "-" . rand().".$extensao";
 				
 			if($error != 0){
 				$msg[] = "<strong>$name :</strong> ".$errorMsg[$error];
@@ -115,8 +115,7 @@
 				if(move_uploaded_file($tmp, $folder.'/'.$novoNome)){
 					// Prepara o cadastro
 					$query = $conn->prepare("UPDATE noticias SET titulo = ?, description = ?, tags = ?, imagem = ?, descricao = ?, status = ?, unidade = ? WHERE id = ?");
-					$imagem = $novoNome;
-					$parametros = array($titulo, $description, $tags, $imagem, $descricao, $status, $unidade, $id);
+					$parametros = array($titulo, $description, $tags, $novoNome, $descricao, $status, $unidade, $id);
 
 					if($query->execute($parametros)) {
 						echo "<script>alert('Notícia editada com sucesso!')</script>";
@@ -330,7 +329,7 @@
 				<div class="row">
 					<div class="col-lg-12">
 						<label for="description">Descrição (Google)</label>
-						<textarea name="description" id="description" class="form-control" rows="5"></textarea>
+						<textarea name="description" id="description" class="form-control" rows="3"></textarea>
 					</div>
 				</div>
 				<div class="row">
@@ -389,15 +388,19 @@
 									<?php if($linha->status == 1) { echo "Ativo"; } ?>
 								</span></td>
 							  <td align="right">
+								<?php
+									if($_SESSION['UserAcess'] == "admin") {
+								?>
 								<a href="#edit-<?php echo $linha->id; ?>" data-toggle="modal" class="btn btn-primary btn-md"><i class="fa fa-edit"></i></a>
 								<a href="#remove-<?php echo $linha->id; ?>" data-toggle="modal" class="btn btn-danger btn-md"><i class="fa fa-trash"></i></a>
+								<?php } ?>
 							  </td>
 							</tr>
 							
 							<!-- Edit -->
 							<div class="modal fade" id="edit-<?php echo $linha->id; ?>" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
 							  <div class="modal-dialog" role="document">
-								<form action="" method="post">
+								<form action="" method="post" enctype="multipart/form-data">
 								<div class="modal-content">
 								  <div class="modal-header">
 									<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
@@ -405,34 +408,56 @@
 								  </div>
 								  <div class="modal-body">
 									<div class="row">
-										<div class="col-lg-3">
-											<label for="referencia">Referência</label>
-											<input type="text" name="referencia" id="referencia" class="form-control" value="<?php echo $linha->referencia; ?>">
+										<div class="col-lg-12">
+											<label for="titulo">Título</label>
+											<input type="text" name="titulo" id="titulo" class="form-control" value="<?php echo $linha->titulo; ?>">
 										</div>
-										<div class="col-lg-4">
-											<label for="preco">Preço</label>
-											<input type="text" name="preco" id="preco" class="form-control" value="<?php echo $linha->preco; ?>">
+									</div>
+									<div class="row">
+										<div class="col-lg-12">
+											<label for="foto">Imagem</label>
+											<input type="file" name="foto" id="foto" class="form-control">
+											
+											<br />
+											
+											<img src="../uploads/noticias/<?php echo $linha->imagem; ?>" width="100%" />
 										</div>
-										<div class="col-lg-5">
+									</div>
+									<div class="row">
+										<div class="col-lg-12">
+											<label for="descricao">Descrição (Notícia)</label>
+											<textarea name="descricao" id="descricao" class="form-control" rows="10"><?php echo $linha->descricao; ?></textarea>
+										</div>
+									</div>
+									<div class="row">
+										<div class="col-lg-6">
+											<label for="unidade">Unidade</label>
+											<select name="unidade" id="unidade" class="form-control" required>
+												<option value="">SELECIONE</option>
+												<option value="masc-sp" <?php if($linha->unidade == "masc-sp") { echo "selected"; } ?>>Masculina - São Paulo</option>
+												<option value="fem-sp" <?php if($linha->unidade == "fem-sp") { echo "selected"; } ?>>Feminina - São Paulo</option>
+												<option value="masc-pr" <?php if($linha->unidade == "masc-pr") { echo "selected"; } ?>>Masculina - Paraná</option>
+											</select>
+										</div>
+										<div class="col-lg-6">
 											<label for="status">Status</label>
 											<select name="status" id="status" class="form-control">
 												<option value="">SELECIONE</option>
 												<option value="1" <?php if($linha->status == 1) { echo "selected"; } ?>>Ativo</option>
 												<option value="0" <?php if($linha->status == 0) { echo "selected"; } ?>>Inativo</option>
-												<option value="2" <?php if($linha->status == 2) { echo "selected"; } ?>>Esgotado</option>
 											</select>
 										</div>
 									</div>
 									<div class="row">
 										<div class="col-lg-12">
-											<label for="medidas">Medidas</label>
-											<textarea name="medidas" id="medidas" class="form-control" rows="3"><?php echo $linha->medidas; ?></textarea>
+											<label for="description">Descrição (Google)</label>
+											<textarea name="description" id="description" class="form-control" rows="3"><?php echo $linha->description; ?></textarea>
 										</div>
 									</div>
 									<div class="row">
 										<div class="col-lg-12">
-											<label for="descricao">Descrição</label>
-											<textarea name="descricao" id="descricao" class="form-control" rows="5"><?php echo $linha->descricao; ?></textarea>
+											<label for="tags">Tags (Separado por ",")</label>
+											<input type="text" name="tags" id="tags" class="form-control" value="<?php echo $linha->tags; ?>">
 										</div>
 									</div>
 								  </div>
