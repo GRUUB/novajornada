@@ -23,6 +23,52 @@
 		}
     }
 	
+	if(isset($_POST['add-foto'])){
+    	extract($_POST);
+		
+		if(isset($_FILES['foto'])){
+			$errors= array();
+			foreach($_FILES['foto']['tmp_name'] as $key => $tmp_name ){
+				$file_name = $key.$_FILES['foto']['name'][$key];
+				$file_size =$_FILES['foto']['size'][$key];
+				$file_tmp =$_FILES['foto']['tmp_name'][$key];
+				$file_type=$_FILES['foto']['type'][$key];	
+				if($file_size > 2097152){
+					$errors[]='File size must be less than 2 MB';
+				}		
+				
+				$novoNome = rand() . "-" . $file_name;
+				
+				// Prepara o cadastro
+				$query = $conn->prepare("INSERT INTO fotos (galeria, imagem, ordem) VALUES (:galeria, :imagem, :ordem)");
+				$query->bindValue(":galeria", $id);
+				$query->bindValue(":imagem", $novoNome);
+				$query->bindValue(":ordem", 0);
+				
+				$desired_dir = "../uploads/galerias";
+				if(empty($errors) == true){
+					if(is_dir($desired_dir) == false){
+						mkdir("$desired_dir", 0700);		// Create directory if it does not exist
+					}
+					if(is_dir("$desired_dir/".$file_name)==false){
+						move_uploaded_file($file_tmp,"../uploads/galerias/".$novoNome);
+					}else{									//rename the file if another one exist
+						$new_dir="../uploads/galerias/".$novoNome;
+						rename($file_tmp,$new_dir) ;				
+					}
+					if($query->execute()) {
+						echo "<script>alert('Imagem cadastrada com sucesso!')</script>";
+					} else {
+						echo "<script>alert('Erro ao cadastrar imagem!')</script>";
+					}			
+				}else{
+						print_r($errors);
+				}
+			}
+		}
+		
+    }
+	
 	if(isset($_POST['edit'])){
     	extract($_POST);
 		
@@ -56,6 +102,27 @@
 				echo "<script>alert('Galeria removida com sucesso!')</script>";
 			} else {
 				echo "<script>alert('Erro ao remover galeria!')</script>";
+			}
+		} catch (PDOException $e){
+			return "Erro: ".$e->getMessage();
+		}
+    }
+	
+	if(isset($_GET['remover'])){
+    	
+		$id = addslashes($_GET['remover']);
+		
+		$sql = "DELETE FROM fotos WHERE id = ?";
+		$parametros = array($id);
+		
+		try {
+			$query = $conn->prepare($sql);
+			$query->execute($parametros);
+			
+			if($query->rowCount() == 1){
+				echo "<script>alert('Imagem removida com sucesso!')</script>";
+			} else {
+				echo "<script>alert('Erro ao remover imagem!')</script>";
 			}
 		} catch (PDOException $e){
 			return "Erro: ".$e->getMessage();
@@ -245,6 +312,7 @@
                       <th>Unidade</th>
                       <th>Status</th>
                       <th></th>
+                      <th></th>
                     </tr>
 					<?php
 						$sql = "SELECT * FROM galerias";
@@ -261,8 +329,11 @@
 						<?php if($linha->unidade == "masc-pr") echo "Masculina - Paraná"; ?>
 					  </td>
                       <td><?php if($linha->status == 1) echo "Ativo"; else echo "Inativo"; ?></td>
+					  <td>
+						<a href="?galeria=<?php echo $linha->id; ?>" class="btn btn-default btn-xs"><i class="fa fa-picture-o"></i> ver fotos</a>
+					  </td>
                       <td align="right">
-						<a href="?galeria=<?php echo $linha->id; ?>" class="btn btn-success btn-md"><i class="fa fa-picture-o"></i></a>
+						<a href="#add-foto<?php echo $linha->id; ?>" data-toggle="modal" class="btn btn-success btn-md"><i class="fa fa-plus"></i></a>
 						<?php
 							if($_SESSION['UserAcess'] == "admin") {
 						?>
@@ -271,6 +342,34 @@
 						<?php } ?>
 					  </td>
                     </tr>
+					
+					<!-- Add foto -->
+					<div class="modal fade" id="add-foto<?php echo $linha->id; ?>" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+					  <div class="modal-dialog" role="document">
+						<form action="" method="post" enctype="multipart/form-data">
+						<div class="modal-content">
+						  <div class="modal-header">
+							<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+							<h4 class="modal-title" id="myModalLabel">Adicionar Fotos</h4>
+						  </div>
+						  <div class="modal-body">
+							<div class="row">
+								<div class="col-lg-12">
+									<label for="foto">Imagem</label>
+									<input type="file" name="foto[]" id="foto" class="form-control" multiple="multiple">
+								</div>
+							</div>
+						  </div>
+						  <div class="modal-footer">
+							<button type="button" class="btn btn-default" data-dismiss="modal">Fechar</button>
+							<button type="submit" name="add-foto" class="btn btn-primary">Salvar</button>
+							<input type="hidden" name="id" value="<?php echo $linha->id; ?>">
+						  </div>
+						</div>
+					    </form>
+					  </div>
+					</div>
+					<!-- Add foto -->
 					
 					<!-- Edit -->
 					<div class="modal fade" id="edit-<?php echo $linha->id; ?>" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
@@ -351,6 +450,28 @@
                   </table>
                 </div><!-- /.box-body -->
               </div><!-- /.box -->
+			  
+			  <?php
+				if(isset($_GET['galeria'])){
+					
+					echo '<div class="row">';
+					
+					$id = addslashes($_GET['galeria']);
+					
+					$sql = "SELECT * FROM fotos WHERE galeria = {$id}";
+					$query = $conn->prepare($sql);
+					$query->execute();
+					while($linha = $query->fetch(PDO::FETCH_OBJ)){
+						echo '<div class="col-lg-4">';
+						echo '<img src="../uploads/galerias/'.$linha->imagem.'" width="100%" height="300px">';
+						echo "<a href='?galeria=".$id."&remover=".$linha->id."' class='btn btn-danger btn-xs confirmation'><i class='fa fa-trash-o'></i> remover foto</a>";
+						echo '<hr />';
+						echo '</div>';
+					}
+					
+					echo '</div>';
+				}
+			  ?>
         </section><!-- /.content -->
       </div><!-- /.content-wrapper -->
 	  
@@ -383,5 +504,10 @@
     <script src="dist/js/pages/dashboard2.js"></script>
     <!-- AdminLTE for demo purposes -->
     <script src="dist/js/demo.js"></script>
+	<script type='text/javascript'>
+		$('.confirmation').on('click', function () {
+			return confirm('Tem certeza que deseja remover este item?');
+		});
+	</script>
   </body>
 </html>
