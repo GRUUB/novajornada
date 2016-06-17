@@ -1,3 +1,15 @@
+<?php
+	require_once "painel/config/config.php";
+	function limitarTexto($texto, $limite){
+		$contador = strlen($texto);
+		if ( $contador >= $limite ) {   
+			$texto = substr($texto, 0, strrpos(substr($texto, 0, $limite), ' ')) . '...';
+			return $texto;
+		} else {
+			return $texto;
+		}
+	}
+?>
 <!DOCTYPE html>
 <html lang="pt-br">
 	<head>
@@ -5,7 +17,7 @@
 		<meta name="viewport" content="width=device-width, user-scalable=yes, initial-scale=1">
 		<meta name="keywords" content="ctnj, comunidade terapeutica, nova jornada, tratamento alcool, tratamento drogas, tratamento maconha, tratamento crack, tratamento cocaina, dependencia quimica, dependencia alcool, dependencia drogas, dependencia maconha, dependencia crack, dependencia cocaina, alcool, drogas, maconha, crack, cocaina" />
 		<meta name="description" content="Somos uma Comunidade Terapêutica especializada na recuperação de dependentes químicos do álcool e das drogas" />
-		<meta name="author" content="STUDIOBNT" />
+		<meta name="author" content="GRUUB" />
 		<meta name="robot" content="index, follow" />
 		<title>Notícias | CTNJ</title>
 		<link rel="stylesheet" href="css/bootstrap.css" />
@@ -39,46 +51,30 @@
 		<div class="container">
 			<div class="row">
 				<div id="content" class="col-lg-8 col-md-8 col-sm-12 col-xs-12 pull-right">
-					<h1 class="title">Notícias</h1>
-					
+					<h1 class="title">Últimas Notícias</h1>
 					<div class="row">
+						<?php
+							$sql = "SELECT * FROM noticias WHERE unidade = 'masc-pr' AND status = 1 ORDER BY id DESC";
+							$query = $conn->prepare($sql);
+							$query->execute();
+							if($query->rowCount() == 0){
+								echo "<h4>Nenhuma notícia encontrada!</h4>";
+							} else {
+								$count = 0;
+								while($linha = $query->fetch(PDO::FETCH_OBJ)){
+									$count++;
+						?>
 						<div class="news col-lg-6 col-md-6 col-sm-12 col-xs-12">
-							<a href="#"><a href="#"><img src="imagens/noticias/1.jpg" class="img-resposive" /></a></a>
-							<a href="#"><h1 class="title">Maconha vicia e gera prejuízos permanentes no cérebro, diz novo estudo</h1></a>
+							<a href="verNoticia.php?id=<?php echo $linha->id; ?>"><img src="uploads/noticias/<?php echo $linha->imagem; ?>" class="img-resposive" /></a>
+							<a href="verNoticia.php?id=<?php echo $linha->id; ?>"><h1 class="title"><?php echo $linha->titulo; ?></h1></a>
 							
 							<p align="justify">
-								Já faz um certo tempo que é considerada a ideia de que as pessoas que ocasionalmente fumam maconha podem, em breve, se tornarem viciadas. Agora, os cientistas afirmam ter chegado ao real motivo dessa questão. Segundo eles...
+								<?php echo nl2br((limitarTexto($linha->descricao, $limite = 250))); ?>
 							</p>
 							
-							<a href="#" class="more btn btn-xs btn-primary pull-right">Leia Mais</a>
+							<a href="verNoticia.php?id=<?php echo $linha->id; ?>" class="more btn btn-xs btn-primary pull-right">Leia Mais</a>
 						</div>
-						
-						<div class="news col-lg-6 col-md-6 col-sm-12 col-xs-12">
-							<a href="#"><img src="imagens/noticias/2.jpg" class="img-resposive" /></a>
-							<a href="#"><h1 class="title">Instituto Manassés: exploracao e preconceito em nome de Jesus</h1></a>
-							
-							<p align="justify">
-								"Algum abençoado paga minha passagem ?"
-								<br />
-								Assim começa a saga diária de jovens que, aos berros, pregam dentro de ônibus, contando sua libertação das drogas por obra do Senhor Jesus. São os 'Manassés' em...
-							</p>
-							
-							<a href="#" class="more btn btn-xs btn-primary pull-right">Leia Mais</a>
-						</div>
-						
-					</div>
-					
-					<div class="row">						
-						<div class="news col-lg-6 col-md-6 col-sm-12 col-xs-12">
-							<a href="#"><img src="imagens/noticias/3.jpg" class="img-resposive" /></a>
-							<a href="#"><h1 class="title">Epidemia de crack atinge dois milhões e coloca Brasil no topo do ranking de consumo da droga</h1></a>
-							
-							<p align="justify">
-								Assim como na ficção, na vida real, o crack (variação mais barata da cocaína) pode causar perda de apetite, do sono, depressão, e pode até matar, de acordo com especialistas ouvidos pelo <a href="http://www.uniad.org.br/interatividade/noticias/item/23592-epidemia-de-crack-atinge-dois-milh%C3%B5es-e-coloca-brasil-no-topo-do-ranking-de-consumo-da-droga" target="_blank">R7</a>...
-							</p>
-							
-							<a href="#" class="more btn btn-xs btn-primary pull-right">Leia Mais</a>
-						</div>
+						<?php if($count == 2) { echo "</div><div class='row'>"; } }} ?>
 					</div>
 				</div>
 				
