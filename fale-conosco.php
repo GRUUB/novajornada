@@ -1,3 +1,6 @@
+<?php
+	require_once "painel/config/config.php";
+?>
 <!DOCTYPE html>
 <html lang="pt-br">
 	<head>
